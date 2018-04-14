@@ -3,18 +3,15 @@
 
 #include <string>
 #include <assert.h>
-#include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
-void setDisplayImg( QImage *displayImg, cv::Mat cvFrame, int width,
-                    int height, float lP, float rP, float tP, float bP )
+void setDisplayImg( QImage *displayImg, cv::Mat cvFrame,
+                    int width, int height )
 {
     int cvIndex = 0;
     unsigned char red, green, blue;
-    cv::Point tl( lP *width, tP *height ), br( rP*width, bP*height );
 
-    cv::rectangle( cvFrame, tl, br, cv::Scalar( 255, 0, 125 ), 2 );
     for( int y = 0; y < height; y++ )
     {
         for( int x = 0; x < width; x++ )
@@ -33,25 +30,32 @@ MainWindow::MainWindow( QWidget *parent ) :
     QMainWindow( parent ),
     ui( new Ui::MainWindow )
 {
-    m_leftP   = 0.25;
-    m_topP    = 0.1;
-    m_rightP  = 0.75;
-    m_bottomP = 0.9;
-
-    m_cvFrame = new cv::Mat();
+    m_leftP   = 0;
+    m_topP    = 0;
+    m_rightP  = 1;
+    m_bottomP = 1;
 
     m_cap = new cv::VideoCapture( 0 );
     assert( m_cap->isOpened());
-    m_cap->read( *m_cvFrame );
+    m_cap->read( m_cvFrame );
 
-    m_width  = m_cvFrame->cols;
-    m_height = m_cvFrame->rows;
+    m_width    = ( m_rightP-m_leftP )*m_cvFrame.cols;
+    m_height   = ( m_bottomP-m_topP )*m_cvFrame.rows;
+    m_imgWidth = m_cvFrame.cols;
+
+    m_chop.x = m_leftP*m_cvFrame.cols;
+    m_chop.y = m_topP*m_cvFrame.rows;
+
+    m_chop.width  = m_width;
+    m_chop.height = m_height;
+
+    m_cvFrame = m_cvFrame( m_chop );
+    m_cvFrame = m_cvFrame.clone();
 
     m_displayImg = new QImage( m_width, m_height,
                                QImage::Format_RGB32 );
 
-    setDisplayImg( m_displayImg, *m_cvFrame, m_width, m_height,
-                   m_leftP, m_rightP, m_topP, m_bottomP );
+    setDisplayImg( m_displayImg, m_cvFrame, m_width, m_height );
 
     ui->setupUi( this );
     ui->centralWidget->setFixedSize( QSize( m_width+20, m_height+10 ));
@@ -70,9 +74,11 @@ MainWindow::~MainWindow()
 
 void MainWindow::timerEvent( QTimerEvent * )
 {
-    m_cap->read( *m_cvFrame );
-    setDisplayImg( m_displayImg, *m_cvFrame, m_width, m_height,
-                   m_leftP, m_rightP, m_topP, m_bottomP );
+    m_cap->read( m_cvFrame );
+    m_cvFrame = m_cvFrame( m_chop );
+    m_cvFrame = m_cvFrame.clone();
+
+    setDisplayImg( m_displayImg, m_cvFrame, m_width, m_height );
     ui->label_2->setPixmap( QPixmap::fromImage( *m_displayImg ));
 }
 

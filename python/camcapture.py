@@ -18,6 +18,14 @@ thread = None
 mainWin = None
 stopEvent = None
 inputFrame = None
+tlpw = 0
+tlph = 0
+brpw = 1
+brph = 1
+t_height = 400
+t_width = int(t_height*(brpw-tlpw)
+	/(brph-tlph))
+geometry = "%dx%d"%(t_width+20,t_height)
 
 def videoLoop():
 	global display
@@ -25,13 +33,7 @@ def videoLoop():
 
 	try:
 		while not stopEvent.is_set():
-			tlpw = 0.25
-			tlph = 0.1
-			brpw = 0.75
-			brph = 0.9
-
-			displayFrame = vidSrc.read()
-			inputFrame = copy.deepcopy(displayFrame)
+			inputFrame = vidSrc.read()
 
 			width = inputFrame.shape[1]
 			height = inputFrame.shape[0]
@@ -40,7 +42,7 @@ def videoLoop():
 
 			inputFrame = inputFrame[tl[1]:br[1],tl[0]:br[0]]
 
-			displayFrame = imutils.resize(displayFrame, width=500)
+			displayFrame = imutils.resize(inputFrame, width=t_width)
 	
 			width = displayFrame.shape[1]
 			height = displayFrame.shape[0]
@@ -48,8 +50,8 @@ def videoLoop():
 			tl = (int(tlpw*width), int(tlph*height))
 			br = (int(brpw*width), int(brph*height))
 
-			cv2.rectangle(displayFrame, tl, br,
-				(255, 0, 125), 3)
+			# cv2.rectangle(displayFrame, tl, br,
+			# 	(255, 0, 125), 3)
 			displayImage = cv2.cvtColor(displayFrame, 
 				cv2.COLOR_BGR2RGB)
 			displayImage = Image.fromarray(displayImage)
@@ -69,7 +71,7 @@ def videoLoop():
 def checkLiveness():
 	global inputFrame
 	#add algorithm here inputFrame is the input
-
+	
 	curTxt = txtBox.get(1.0, END)
 	txtBox.delete(1.0, END)
 	txtBox.tag_configure("center", justify='center')
@@ -95,7 +97,7 @@ if __name__ == "__main__":
 
 	mainWin = tki.Tk()
 	mainWin.resizable(width=False, height=False)
-	mainWin.geometry("500x500")
+	mainWin.geometry(geometry)
 
 	vidSrc = VideoStream(0).start()
 
@@ -106,8 +108,7 @@ if __name__ == "__main__":
 	btn.pack(side="left", fill="y", expand="no", padx=10,
 		pady=10)
 
-	txtBox = Text(guiframe, height=0, width=10, spacing1=0.5,
-		font=("Rouge", 16), fg="white")
+	txtBox = Text(guiframe, height=0, width=10,	font=("Rouge", 16), fg="white")
 	txtBox.pack(side="right", fill="x", expand="no", 
 		padx=10, pady=10)
 	
